@@ -1,0 +1,205 @@
+#DISCLAIMER
+#The sample codes are not supported under any Microsoft standard support program or service. The sample codes are provided AS IS without warranty of any kind. Microsoft further disclaims //all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a particular purpose. The entire risk arising out of the use or //performance of the sample codes and documentation remains with you. In no event shall Microsoft, its authors, owners of this repository or anyone else involved in the creation, //production, or delivery of the scripts be liable for any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business //information, or other pecuniary loss) arising out of the use of or inability to use the sample scripts or documentation, even if Microsoft has been advised of the possibility of such //damages
+
+#Sample Code
+#Credentials
+$subscriptionId = "<Subscriptionid>"
+
+# API Management Configuration
+$organizationName = "apipoc"
+$resourceGroupName = "apipocrg"
+
+$apimGatewayHostName = "apigwpoc.s3phirot.xyz"
+$apimPortalHostname = "portal.s3phirot.xyz"
+
+$apiManagementServiceName = "<APIM Name>"
+$location = "East US"
+$apiManagementAdminEmail = "<Your Email>" 
+
+# External Configuration (Custom API Domain)
+$apiHostname = "apigwpoc.s3phirot.xyz"
+$portalHostname = "portal.s3phirot.xyz"
+$sslPort = 443
+
+
+# Did you know you can get a cert from MS IT - https://ssladminhre/Create 
+
+# --- Script to create certificates ----
+# $cert = New-SelfSignedCertificate -certstorelocation cert:\localmachine\my -Subject "*.s3phirot.xyz"
+# $pwd = ConvertTo-SecureString -String '11111111' -Force -AsPlainText 
+# $path = 'cert:\localMachine\my\' + $cert.thumbprint 
+# Export-PfxCertificate -cert $path -FilePath c:\temp\apigw_s3p.pfx -Password $pwd
+# ---- End ---------
+
+$pfxCertificatePassword = "11111111"
+
+$proxyPFXCertificateFilename = "C:\temp\apigw_s3p.pfx"
+$portalPFXCertificateFilename = "C:\temp\portal_s3p.pfx"
+$proxyCERCertificateFilename = "C:\temp\apigw_s3p.cer"
+$portalCERCertificateFilename = "C:\temp\portal_s3p.cer" 
+
+#Network
+$virtualNetworkAddressPrefix = "192.168.0.0/16"
+$gatewaySubnetAddressPrefix = "192.168.0.0/24"
+$apiManagementSubnetAddressPrefix = "192.168.8.0/24"
+
+#Output colors
+$foregroundColor = "Green"
+$backgroundColor = "Black"
+
+#Log 
+$ErrorActionPreference = "SilentlyContinue"
+Stop-Transcript | out-null
+$ErrorActionPreference = "Continue"
+$date = (get-date).tostring("MM-dd-yyyy-HH-mm-ss")
+$logFile = $PSScriptRoot + "\CreateApiManagementEnvLog-" + $date + ".txt"
+Start-Transcript -path $logFile
+$startTime = Get-Date
+Write-Host("Start Time " + $startTime) 
+$colors = "-ForegroundColor $foregroundColor -BackgroundColor $backgroundcolor"
+
+#Step 01
+Login-AzureRmAccount
+Write-Host("Step 01 [Login-AzureRmAccount] completed") $colors
+
+#Step 02
+Get-AzureRmSubscription -Subscriptionid $subscriptionId | Select-AzureRmSubscription
+Write-Host("Step 02 [Get-AzureRmSubscription] completed") $colors
+
+#Step 03
+New-AzureRmResourceGroup -Name $resourceGroupName -Location $location
+Write-Host("Step 03 [New-AzureRmResourceGroup] completed") $colors
+
+#Step 04
+$appgatewaysubnet = New-AzureRmVirtualNetworkSubnetConfig -Name apim01 -AddressPrefix $gatewaySubnetAddressPrefix
+Write-Host("Step 04 [New-AzureRmVirtualNetworkSubnetConfig] completed") $colors
+
+#Step 05
+$apimsubnet = New-AzureRmVirtualNetworkSubnetConfig -Name apim02 -AddressPrefix $apiManagementSubnetAddressPrefix
+Write-Host("Step 05 [New-AzureRmVirtualNetworkSubnetConfig] completed") $colors
+
+#Step 06
+$vnet = New-AzureRmVirtualNetwork -Name appgwvnet -ResourceGroupName $resourceGroupName -Location $location -AddressPrefix $virtualNetworkAddressPrefix -Subnet $appgatewaysubnet,$apimsubnet
+Write-Host("Step 06 [New-AzureRmVirtualNetwork] completed") $colors
+
+#Step 07
+$appgatewaysubnetdata=$vnet.Subnets[0]
+Write-Host("Step 07 [$appgatewaysubnetdata] completed") $colors
+
+#Step 08
+$apimsubnetdata=$vnet.Subnets[1]
+Write-Host("Step 08 [$apimsubnetdata] completed") $colors
+
+#Step 09
+$apimVirtualNetwork = New-AzureRmApiManagementVirtualNetwork -Location $location -SubnetResourceId $apimsubnetdata.Id
+Write-Host("Step 09 [New-AzureRmApiManagementVirtualNetwork] completed") $colors
+
+#Step 10
+#Modified Premium with Developer
+$apimService = New-AzureRmApiManagement -ResourceGroupName "$resourceGroupName" -Location $location -Name $apiManagementServiceName -Organization $organizationName -AdminEmail $apiManagementAdminEmail -VirtualNetwork $apimVirtualNetwork -VpnType "Internal" -Sku "Developer"
+Write-Host("Step 10 [New-AzureRmApiManagement] completed") $colors
+
+#Step 11
+$proxyCertUploadResult = Import-AzureRmApiManagementHostnameCertificate -ResourceGroupName "$resourceGroupName" -Name $apiManagementServiceName -HostnameType "Proxy" -PfxPath $proxyPFXCertificateFilename -PfxPassword $pfxCertificatePassword -PassThru
+$portalCertUploadResult = Import-AzureRmApiManagementHostnameCertificate -ResourceGroupName "$resourceGroupName" -Name $apiManagementServiceName -HostnameType "Portal" -PfxPath $portalPFXCertificateFilename -PfxPassword $pfxCertificatePassword -PassThru
+Write-Host("Step 11 [Import-AzureRmApiManagementHostnameCertificate] completed") $colors
+
+#Step 12
+$proxyHostnameConfig = New-AzureRmApiManagementHostnameConfiguration -CertificateThumbprint $proxyCertUploadResult.Thumbprint -Hostname $apiHostname
+Write-Host("Step 12 [New-AzureRmApiManagementHostnameConfiguration] completed") $colors
+
+$portalHostnameConfig = New-AzureRmApiManagementHostnameConfiguration -CertificateThumbprint $portalCertUploadResult.Thumbprint -Hostname $portalHostname
+Write-Host("Step 12 [New-AzureRmApiManagementHostnameConfiguration] completed") $colors
+
+#Step 13
+$result = Set-AzureRmApiManagementHostnames -Name $apiManagementServiceName -ResourceGroupName "$resourceGroupName" –PortalHostnameConfiguration $portalHostnameConfig -ProxyHostnameConfiguration $proxyHostnameConfig
+Write-Host("Step 13 [Set-AzureRmApiManagementHostnames] completed") $colors
+
+#Step 14
+$publicip = New-AzureRmPublicIpAddress -ResourceGroupName $resourceGroupName -name publicIP01 -location $location -AllocationMethod Dynamic
+Write-Host("Step 14 [New-AzureRmPublicIpAddress] completed") $colors
+
+#Step 15
+$gipconfig = New-AzureRmApplicationGatewayIPConfiguration -Name gatewayIP01 -Subnet $appgatewaysubnetdata
+Write-Host("Step 15 [New-AzureRmApplicationGatewayIPConfiguration] completed") $colors
+
+#Step 16
+$fp01 = New-AzureRmApplicationGatewayFrontendPort -Name 'port01' -Port $sslPort
+Write-Host("Step 16 [New-AzureRmApplicationGatewayFrontendPort] completed") $colors
+
+#Step 17
+$fipconfig01 = New-AzureRmApplicationGatewayFrontendIPConfig -Name "frontend1" -PublicIPAddress $publicip
+Write-Host("Step 17 [New-AzureRmApplicationGatewayFrontendIPConfig] completed") $colors
+
+#Step 18
+# Note: Here I am using Certificate for * domain. You can can have an SSL Certificate for a particular domain
+# Then you need to duplicate Step 19 and be careful to provide the relevant Certificate in Step 20 and Step 23
+#$cert = New-AzureRmApplicationGatewaySslCertificate -Name cert01 -CertificateFile $pfxCertificateFilename -Password $pfxCertificatePassword
+$proxycert = New-AzureRmApplicationGatewaySslCertificate -Name cert01 -CertificateFile $proxyPFXCertificateFilename -Password $pfxCertificatePassword
+$portalcert = New-AzureRmApplicationGatewaySslCertificate -Name cert02 -CertificateFile $portalPFXCertificateFilename -Password $pfxCertificatePassword
+Write-Host("Step 18 [New-AzureRmApplicationGatewaySslCertificate] completed") $colors
+
+#Step 19
+$apimlistener = New-AzureRmApplicationGatewayHttpListener -Name listener01 -Protocol Https -FrontendIPConfiguration $fipconfig01 -FrontendPort $fp01 -SslCertificate $proxycert -HostName $apiHostname -RequireServerNameIndication true
+Write-Host("Step 19 [New-AzureRmApplicationGatewayHttpListener] completed") $colors
+
+$apimportallistener = New-AzureRmApplicationGatewayHttpListener -Name listener02 -Protocol Https -FrontendIPConfiguration $fipconfig01 -FrontendPort $fp01 -SslCertificate $portalcert -HostName $portalHostname -RequireServerNameIndication true
+Write-Host("Step 19 [New-AzureRmApplicationGatewayHttpListener] completed") $colors
+
+#Step 20
+$apimprobe = New-AzureRmApplicationGatewayProbeConfig -Name apimproxyprobe -Protocol Https -HostName $apimGatewayHostName -Path "/status-0123456789abcdef" -Interval 30 -Timeout 120 -UnhealthyThreshold 8
+Write-Host("Step 20 [New-AzureRmApplicationGatewayProbeConfig] completed") $colors
+
+$apimportalprobe = New-AzureRmApplicationGatewayProbeConfig -Name apimportalprobe -Protocol Https -HostName $apimPortalHostname -Path "/signin" -Interval 60 -Timeout 300 -UnhealthyThreshold 8
+Write-Host("Step 20 [New-AzureRmApplicationGatewayProbeConfig] completed") $colors
+
+#Step 21
+#$authcert = New-AzureRmApplicationGatewayAuthenticationCertificate -Name 'whitelistcert1' -CertificateFile $cerCertificateFilename
+$proxyAuthcert = New-AzureRmApplicationGatewayAuthenticationCertificate -Name 'proxyCert' -CertificateFile $proxyCERCertificateFilename
+$portalAuthcert = New-AzureRmApplicationGatewayAuthenticationCertificate -Name 'portalCert' -CertificateFile $portalCERCertificateFilename
+Write-Host("Step 21 [New-AzureRmApplicationGatewayAuthenticationCertificate] completed") $colors
+
+#Step 22
+$apimPoolSetting = New-AzureRmApplicationGatewayBackendHttpSettings -Name "apimPoolSetting" -Port $sslPort -Protocol Https -CookieBasedAffinity Disabled -Probe $apimprobe -AuthenticationCertificates $proxyAuthcert -RequestTimeout 180
+Write-Host("Step 22 [New-AzureRmApplicationGatewayBackendHttpSettings] completed") $colors
+
+$apimPoolPortalSetting = New-AzureRmApplicationGatewayBackendHttpSettings -Name "apimPoolPortalSetting" -Port $sslPort -Protocol Https -CookieBasedAffinity Disabled -Probe $apimportalprobe -AuthenticationCertificates $portalAuthcert -RequestTimeout 180
+Write-Host("Step 22 [New-AzureRmApplicationGatewayBackendHttpSettings] completed") $colors
+
+#Step 23
+$apimProxyBackendPool = New-AzureRmApplicationGatewayBackendAddressPool -Name apimbackend -BackendIPAddresses $apimService.StaticIPs[0]
+Write-Host("Step 23 [New-AzureRmApplicationGatewayBackendAddressPool] completed") $colors
+
+
+#Step 24
+$rule01 = New-AzureRmApplicationGatewayRequestRoutingRule -Name "rule1" -RuleType Basic -HttpListener $apimlistener -BackendAddressPool $apimProxyBackendPool -BackendHttpSettings $apimPoolSetting
+Write-Host("Step 24 [New-AzureRmApplicationGatewayRequestRoutingRule] completed") $colors
+
+$rule02 = New-AzureRmApplicationGatewayRequestRoutingRule -Name "rule2" -RuleType Basic -HttpListener $apimportallistener -BackendAddressPool $apimProxyBackendPool -BackendHttpSettings $apimPoolPortalSetting
+Write-Host("Step 24 [New-AzureRmApplicationGatewayRequestRoutingRule] completed") $colors
+
+#Step 25
+$sku = New-AzureRmApplicationGatewaySku -Name WAF_Medium -Tier WAF -Capacity 2
+Write-Host("Step 25 [New-AzureRmApplicationGatewaySku] completed") $colors
+
+#Step 26
+$appgw = New-AzureRmApplicationGateway -Name appgwtest -ResourceGroupName $resourceGroupName -Location $location -BackendAddressPools $apimProxyBackendPool -BackendHttpSettingsCollection $apimPoolSetting, $apimPoolPortalSetting -FrontendIpConfigurations $fipconfig01 -GatewayIpConfigurations $gipconfig -FrontendPorts $fp01 -HttpListeners $apimlistener, $apimportallistener -RequestRoutingRules $rule01, $rule02 -Sku $sku -SslCertificates $portalcert,$proxycert -AuthenticationCertificates $proxyAuthcert,$portalAuthcert -Probes $apimprobe, $apimportalprobe
+Write-Host("Step 26 [New-AzureRmApplicationGateway] completed") $colors
+
+#Step 27
+Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroupName -Name publicIP01
+Write-Host("Step 27 [Get-AzureRmPublicIpAddress] completed") $colors
+
+#Step 28
+Write-Host("Step 28 You need to create CNAME record for custom api domain($apiHostname & $portalHostName) to the Frontend Public IP of Application Gateway, which will be something like ***********.cloudapp.net ") $colors
+
+#Done
+Write-Host("Done") $colors
+$endTime = Get-Date
+$elapsedTime = New-Timespan –Start $startTime –End $endTime
+
+Write-Host("End Time: " + $endTime) $colors
+Write-Host("Elapsed Time: " + $elapsedTime) $colors
+Write-Host "Press any key to continue ..." $colors
+
+Stop-Transcript
