@@ -1,7 +1,7 @@
 ---
 page_type: sample
 languages:
-- powershell
+- AzCLI
 products:
 - Azure Virtual Machine Scale Set
 ---
