@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "description": "yourHttpServername",
+    "annotations": [],
+    "type": "HttpServer",
+    "typeProperties": {
+      "url": "http://localhost:1981/",
+      "enableServerCertificateValidation": true,
+      "authenticationType": "Basic",
+      "userName": "yourusername",
+      "password": {
+        "type": "SecureString",
+        "value": "yourpwd"
+      },
+      "authHeaders": {
+        "APIKey": {
+          "type": "SecureString",
+          "value": "YourApiKey"
+        }
+      }
+    }
+  }
+}
