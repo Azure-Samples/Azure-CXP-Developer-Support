@@ -1,1 +1,1 @@
-Dotnet sample for the Azure Keyvault
+Dotnet sample for the Azure Synapse
