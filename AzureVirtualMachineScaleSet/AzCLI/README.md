@@ -1,9 +1,9 @@
 ---
 page_type: sample
 languages:
-- AzCLI
+- azurecli
 products:
-- Azure Virtual Machine Scale Set
+- azure-vm-scalesets	
 ---
 
 # AzCLI script to Configure the Azure Virtual Machine Scale Set diagnostics extension.
