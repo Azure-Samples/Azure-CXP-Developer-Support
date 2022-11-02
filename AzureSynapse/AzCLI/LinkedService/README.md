@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - python
 products:
-- Azure Synapse
+- azure-synapse-analytics
 ---
 
 # AzureCLI command is to configure linked services in synapse account using json format configuration file
