@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - Go
 products:
-- Azure Database for My SQL
+- azure-database-mysql
 ---
 
 
