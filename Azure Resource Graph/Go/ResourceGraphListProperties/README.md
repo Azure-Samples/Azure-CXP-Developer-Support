@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - go
 products:
-- Azure Resource Graph
+- azure-resource-graph
 ---
 
 
