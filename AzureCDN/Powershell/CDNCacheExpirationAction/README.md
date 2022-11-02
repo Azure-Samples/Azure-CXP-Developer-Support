@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - powershell
 products:
-- Azure CDN
+- azure-cdn
 ---
 
 
