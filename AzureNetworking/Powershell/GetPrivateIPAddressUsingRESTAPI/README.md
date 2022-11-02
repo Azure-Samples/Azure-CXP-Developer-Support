@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - powershell
 products:
-- Azure Firewall
+- azure-firewall
 ---
 
 # PowerShell script invokes the Azure Firewalls - GET REST API  to display the hubIPAddresses details.
