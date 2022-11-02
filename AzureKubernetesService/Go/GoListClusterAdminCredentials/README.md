@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - Go
 products:
-- Azure Kubernetes Service
+- azure-kubernetes-service
 ---
 
 
