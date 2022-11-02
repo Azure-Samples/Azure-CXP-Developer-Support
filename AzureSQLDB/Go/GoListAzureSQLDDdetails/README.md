@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - Go
 products:
-- Azure SQL database
+- azure-sql-database	
 ---
 
 
