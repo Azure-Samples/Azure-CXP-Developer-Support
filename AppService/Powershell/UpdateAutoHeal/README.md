@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - powershell
 products:
-- Azure AppService
+- azure-app-service
 ---
 
 
