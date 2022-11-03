@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - go
 products:
-- Azure Storage
+- azure-storage	
 ---
 
 
