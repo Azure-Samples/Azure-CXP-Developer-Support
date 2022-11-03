@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - powershell
 products:
-- Azure Application Gateway
+- azure-application-gateway
 ---
 
 
