@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - powershell
 products:
-- Azure API Management
+- azure-api-management
 ---
 
 
