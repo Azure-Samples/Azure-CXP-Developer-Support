@@ -3,7 +3,7 @@ page_type: sample
 languages:
 - powershell
 products:
-- Azure Virtual Machine
+- azure-virtual-machines
 ---
 
 
