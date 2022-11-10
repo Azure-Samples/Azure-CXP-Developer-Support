@@ -7,7 +7,7 @@ products:
 ---
 
 
-# Go sample code lists the cluster admin credentials for your AKS cluster.
+# Sample Go code to add a resource tag to a resource group
 
 
  Code Overview and Pre-requisites
