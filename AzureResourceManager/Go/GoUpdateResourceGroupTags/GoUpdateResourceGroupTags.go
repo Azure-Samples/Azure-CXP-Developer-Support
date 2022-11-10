@@ -3,7 +3,7 @@
 
 
 // Code Overview and Pre-requisites
-// This sample code lists the cluster admin credentials for your AKS cluster.
+// This sample code updates the resource group by adding a resource tag to it.
 // Before running this, you need to create an AKS cluster and ensure that Azure Kubernetes Service Cluster Admin Role permission is provided for your Service Principal
 // Set the environment variables AZURE_SUBSCRIPTION_ID, AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_OBJECT_ID
 // Use go version go1.18.1 windows/amd64
