@@ -42,9 +42,9 @@ namespace StorageAzurite
             // Container Name 
             var blobContainerName = Guid.NewGuid().ToString("D");
              
-            // Azurite connectionString remains the same for all the applications. 
+            // Update the Azurite connectionString 
             const string connectionString =
-                "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://localhost:10000/devstoreaccount1;";
+                "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=XXXXXXXXXXXXXXXXXXXXXXXX;BlobEndpoint=http://localhost:10000/devstoreaccount1;";
 
             var blobServiceClient = new BlobServiceClient(connectionString);
 
