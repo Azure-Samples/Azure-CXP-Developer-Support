@@ -13,7 +13,7 @@ products:
  
  This sample code uses the Azurite on docker to upload the blob and down the blobs from it using the Azure.Storage.Blobs library
  Before running this, you need to create an Azure Storage account within your Azure Subscription.
- Ensure that t=you have the docker installed on your locker machine. Then run the command:  docker run --rm -p 10000:10000 mcr.microsoft.com/azure-storage/azurite azurite-blob --blobHost 0.0.0.0
+ Ensure that t=you have the docker installed on your locker machine. Then run the command:  `docker run --rm -p 10000:10000 mcr.microsoft.com/azure-storage/azurite azurite-blob --blobHost 0.0.0.0`
  Update all the variable details in the below code before running the sample.
  
  
