@@ -43,8 +43,7 @@ namespace StorageAzurite
             var blobContainerName = Guid.NewGuid().ToString("D");
              
             // Update the Azurite connectionString 
-            const string connectionString =
-                "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=XXXXXXXXXXXXXXXXXXXXXXXX;BlobEndpoint=http://localhost:10000/devstoreaccount1;";
+            const string connectionString = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=XXXXXXXXXXXXXXXXXXXXXXXX;BlobEndpoint=http://localhost:10000/devstoreaccount1;";
 
             var blobServiceClient = new BlobServiceClient(connectionString);
 
@@ -53,7 +52,8 @@ namespace StorageAzurite
 
             var client = new BlobContainerClient(connectionString, blobContainerName);
 
-            var blobClient = client.GetBlobClient("data");
+            var blobClient = new BlobClient(new Uri(blobContainerClient.Uri.ToString() + "/data"),
+                                new StorageSharedKeyCredential("devstoreaccount1", "XXXXXXXXXXXXXXXXXXXXXXXXXX"));
 
             // Upload the Blob with a sample content
             _ = await blobClient.UploadAsync(new MemoryStream(new byte[] { 0 }), true);
