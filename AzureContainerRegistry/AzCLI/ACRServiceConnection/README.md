@@ -10,7 +10,7 @@ products:
 
 Script Overview and Pre-requisites
 
-This sample shell script is to configure linked services in synapse account using json format configuration file
+This sample shell script is to configure linked services in acr account using json format configuration file
 Before running this script, create an Azure Container Registry account within your subscription.
 Update all the parameter values in the below command.
 
