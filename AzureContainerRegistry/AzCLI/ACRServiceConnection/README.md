@@ -19,8 +19,8 @@ The sample script are not supported under any Microsoft standard support program
 
 ```
 az devops service-endpoint create 	--service-endpoint-configuration @"linkedserviceacr.json"
-                                  	--organization "https://dev.azure.com/Issue1698Organization/" 
-						                        --project issue1698Repo
+                                  	--organization "https://dev.azure.com/myorg/" 
+					--project myproject
 ```
 
 Click on the `Browse code` to refer the `linkedserviceacr.json` file.
