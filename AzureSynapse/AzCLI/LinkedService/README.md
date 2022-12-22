@@ -1,7 +1,7 @@
 ---
 page_type: sample
 languages:
-- python
+- azurecli
 products:
 - azure-synapse-analytics
 ---
