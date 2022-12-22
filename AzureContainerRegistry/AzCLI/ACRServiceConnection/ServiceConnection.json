@@ -7,7 +7,7 @@
     "parameters": {
       "loginServer": "registry.azurecr.io",
       "role": "*****-4cb8-b61a-304f252e45ec",
-      "scope": "/subscriptions/<subid>/resourceGroups/myresourcegroup/providers/Microsoft.ContainerRegistry/registries/issue1495registry",
+      "scope": "/subscriptions/<subid>/resourceGroups/myresourcegroup/providers/Microsoft.ContainerRegistry/registries/myregistry",
       "servicePrincipalId": "*****-47e0-8563-c0a24706d738",
       "servicePrincipalKey": "****",
       "tenantId": "*****-41af-91ab-2d7cd011db47"
