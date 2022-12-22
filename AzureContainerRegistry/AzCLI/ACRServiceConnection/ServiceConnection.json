@@ -1,16 +1,16 @@
 {
   "data": {},
-  "name": "issue1495registrysvcconnconfig",
+  "name": "registrysvcconnconfig",
   "type": "dockerregistry",
-  "url": "issue1495registry.azurecr.io",
+  "url": "registry.azurecr.io",
   "authorization": {
     "parameters": {
-      "loginServer": "issue1495registry.azurecr.io",
-      "role": "8311e382-0749-4cb8-b61a-304f252e45ec",
-      "scope": "/subscriptions/b83c1ed3-c5b6-44fb-b5ba-2b83a074c23f/resourceGroups/Issue1495/providers/Microsoft.ContainerRegistry/registries/issue1495registry",
-      "servicePrincipalId": "beb836f5-8c90-47e0-8563-c0a24706d738",
-      "servicePrincipalKey": "obtpnslofot5bqnr7yndr5xf6ic5rhq5quqsghjlhonr35kojxxq",
-      "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+      "loginServer": "registry.azurecr.io",
+      "role": "*****-4cb8-b61a-304f252e45ec",
+      "scope": "/subscriptions/<subid>/resourceGroups/myresourcegroup/providers/Microsoft.ContainerRegistry/registries/issue1495registry",
+      "servicePrincipalId": "*****-47e0-8563-c0a24706d738",
+      "servicePrincipalKey": "****",
+      "tenantId": "*****-41af-91ab-2d7cd011db47"
     },
     "scheme": "ServicePrincipal"
   },
@@ -19,10 +19,10 @@
   "serviceEndpointProjectReferences": [
     {
       "projectReference": {
-        "id": "41157f8c-4bfd-4228-98ac-f7b359a9cbe8",
-        "name": "Issue1698Repo"
+        "id": "****-4bfd-4228-98ac-f7b359a9cbe8",
+        "name": "myproject"
       },
-      "name": "issue1495registrysvcconnconfig"
+      "name": "registrysvcconnconfig"
     }
   ]
 }
