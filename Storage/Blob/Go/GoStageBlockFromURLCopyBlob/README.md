@@ -49,8 +49,8 @@ func main() {
 
 	// Use your storage account's name and key to create a credential object, used to access your account.
 	// You can obtain these details from the Azure Portal.
-	accountName := "navbastoragedemo"
-	accountKey := "JF1bMEJ0IfVVp/BT48zUGD0+EKzz+ZTCKVFfcbFcn4GRhhzf2UTK8C5jfP04gatufB34WSVkC4vDugc0HXuzaw=="
+	accountName := "MyAccountName"
+	accountKey := "MyStorageAccountConnectionString"
 
 	cred, err := azblob.NewSharedKeyCredential(accountName, accountKey)
 	if err != nil {
