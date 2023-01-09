@@ -1,0 +1,39 @@
+{
+  "authorization": {
+    "parameters": {
+      "azureTenantId": "<tenantid>",
+      "azureEnvironment": "AzureCloud"
+    },
+    "scheme": "Kubernetes"
+  },
+  "createdBy": {
+
+  },
+  "data": {
+    "authorizationType": "AzureSubscription",
+    "azureSubscriptionId": "<subscriptionid>",
+    "azureSubscriptionName": "<subscription>",
+    "clusterId": "/subscriptions/<subscriptionid>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<your cluster name>",
+    "namespace": "default"
+  },
+  "isShared": false,
+  "name": "<Your cluster name>",
+  "owner": "library",
+  "type": "kubernetes",
+  "url": "https://<Your AKS Url *.azmk8s.io>",
+  "administratorsGroup": null,
+  "description": "<Service Connection For AKS>",
+  "groupScopeId": null,
+  "operationStatus": null,
+  "readersGroup": null,
+  "serviceEndpointProjectReferences": [
+    {
+      "description": "<Your Service Connection For AKS Description>",
+      "name": "<Your Service Connection For AKS Name>",
+      "projectReference": {
+        "id": "<Your DevOps Project Id>",
+        "name": "<Your DevOps Project Name>"
+      }
+    }
+  ]
+}
