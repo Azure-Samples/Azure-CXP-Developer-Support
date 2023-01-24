@@ -3,23 +3,28 @@ page_type: sample
 languages:
 - powershell
 products:
-- billing
+- azure-cost-management
+description: "PowerShell sample script to list billing accounts."
 ---
 
 
-# PS script to List Billing Accounts using Rest API
+# PowerShell script to list billing accounts using Rest API
 
-Script Overview and Pre-requisites
+## Script Overview 
  
- This sample script invokes the REST API directly to List the Billing Accounts from PowerShell.
- Before running this, One has to go to `Cost Management + Billing` blade in Azure Portal --> `Billing Scopes` --> Select any billing account --> Access Control blade IAM to grant any one permissions to view billing accounts.
- Remember that a Billing Reader, it’s a permissions available at Subscription scope. Once a user grants this permission, they will be able to download or manage only invoices of the subscription (below), not the billing accounts.
- The permissions needed to view the billing account is different from the permissions to control at subscription. BillingReader or any custom role is a RBAC permission on Subscription scope and they have no significance or impact on controlling/managing billing accounts.
+ This sample script invokes the REST API directly to list the billing Accounts using PowerShell.
+ 
+ ## Pre-requisites
+ Before running this, we will need to assign permissions on the targeted Billing Account. To do this, go to the `Cost Management + Billing` blade in Azure Portal --> `Billing Scopes` --> Select your desired billing account --> then `Access Control (IAM)` to grant any one permissions to view billing accounts.
+ 
+ >[!NOTE]
+ > Granting permission on a billing account is different than assigning the **Billing Reader** permission at the Subscription scope. A **Billing Reader** will be able to download or manage **only** invoices of the Subscription, not the billing accounts.
+ 
  Update all the variable details in the below code before running the sample.
  
-DISCLAIMER
+## DISCLAIMER
 
-The sample script are not supported under any Microsoft standard support program or service. The sample script are provided AS IS without warranty of any kind. Microsoft further disclaims all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a particular purpose. The entire risk arising out of the use or performance of the sample codes and documentation remains with you. In no event shall Microsoft, its authors, owners of this repository or anyone else involved in the creation, production, or delivery of the scripts be liable for any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or other pecuniary loss) arising out of the use of or inability to use the sample scripts or documentation, even if Microsoft has been advised of the possibility of such damages 
+The sample script are not supported under any Microsoft standard support program or service. The sample script are provided **AS IS** without warranty of any kind. Microsoft further disclaims all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a particular purpose. The entire risk arising out of the use or performance of the sample codes and documentation remains with you. In no event shall Microsoft, its authors, owners of this repository or anyone else involved in the creation, production, or delivery of the scripts be liable for any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or other pecuniary loss) arising out of the use of or inability to use the sample scripts or documentation, even if Microsoft has been advised of the possibility of such damages. 
 
 ```
 # Sample Script
