@@ -6,7 +6,7 @@ products:
 - azure-synapse-analytics
 ---
 
-#AzurePowerShell command is to create a new synapse configuration in synapse pool account using json format configuration file
+#PowerShell command is to create a new synapse configuration in synapse pool account using json format configuration file
 
 Script Overview and Pre-requisites
 
