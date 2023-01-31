@@ -1,7 +1,7 @@
 ---
 page_type: sample
 languages:
-- azurepowershell
+- powershell
 products:
 - azure-synapse-analytics
 ---
