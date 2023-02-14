@@ -40,7 +40,7 @@ namespace StorageGetTables
         static async Task Main(string[] args)
         {
 
-             var storageUri = "https://navbastoragedemo.table.core.windows.net/";
+             var storageUri = "https://StorageAccountName.table.core.windows.net/";
              
             // Construct a new "TableServiceClient using a TableSharedKeyCredential.
             var serviceClient = new TableServiceClient(
