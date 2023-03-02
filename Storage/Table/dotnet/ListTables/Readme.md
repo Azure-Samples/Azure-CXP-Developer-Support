@@ -7,7 +7,7 @@ products:
 ---
 
 
-# csharp sample code to Query and List all the Tables win the Azure Storage Account.
+# csharp sample code to Query and List all the Tables in the Azure Storage Account.
 
  Code Overview and Pre-requisites
  
