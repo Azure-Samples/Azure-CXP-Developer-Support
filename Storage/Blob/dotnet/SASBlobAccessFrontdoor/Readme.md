@@ -7,7 +7,7 @@ products:
 ---
 
 
-# csharp sample code to call SyncCopyFromUriAsync() method to copy blob with Blob tags from source to destination blob within the storage Account
+# csharp sample code to perform the Azure Blob Storage operation via Azure FrontEnd url endpoint using SAS token
 
  Code Overview and Pre-requisites
  
