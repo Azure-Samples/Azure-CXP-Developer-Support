@@ -1,0 +1,511 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "String",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "adminUsername": {
+      "type": "String",
+      "metadata": {
+        "description": "Username for the Virtual Machine."
+      }
+    },
+    "adminPassword": {
+      "minLength": 12,
+      "type": "SecureString",
+      "metadata": {
+        "description": "Password for the Virtual Machine."
+      }
+    },
+    "YourPublicIP": {
+      "defaultValue": "1.1.1.1/32",
+      "type": "String",
+      "metadata": {
+        "description": "The Public ip that will be used to connect to the VM"
+      }
+    }
+  },
+  "variables": {
+    "VnetName": "ApplicationGW-vnet",
+    "VMSubnetName": "VM-Subnet",
+    "AGWSubnetName": "AppGwV2-Subnet",
+    "VnetAddressSpace": "10.1.0.0/16",
+    "VMSubnetAddressSpace": "10.1.1.0/24",
+    "AGWSubnetAddressSpace": "10.1.0.0/24",
+    "BackendNSG": "VM-Subnet-NSG",
+    "AppGWNSG": "APPGW-Subnet-NSG",
+    "VMName": "BackendVM1",
+    "VMNIC": "[concat(variables('VMName'), '-NIC')]",
+    "VMPIP": "[concat(variables('VMName'), '-PIP')]",
+    "applicationGateWayName": "APPGWv2-HTTPS",
+    "AppGWPIP": "[concat(variables('applicationGateWayName'), '-PIP')]",
+    "ClientName": "ClientVM1",
+    "ClientNIC": "[concat(variables('ClientName'), '-NIC')]",
+    "ClientPIP": "[concat(variables('ClientName'), '-PIP')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2022-07-01",
+      "name": "[variables('BackendNSG')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowRDP",
+            "properties": {
+              "priority": "101",
+              "protocol": "TCP",
+              "sourceAddressPrefix": "[parameters('YourPublicIP')]",
+              "destinationAddressPrefix": "[variables('VMSubnetAddressSpace')]",
+              "destinationPortRange": "3389",
+              "sourcePortRange": "*",
+              "access": "Allow",
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "default-allow-443",
+            "properties": {
+              "priority": 1001,
+              "access": "Allow",
+              "direction": "Inbound",
+              "destinationPortRange": "443",
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2022-07-01",
+      "name": "[variables('AppGWNSG')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowHTTPS",
+            "properties": {
+              "priority": "101",
+              "protocol": "TCP",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('AGWSubnetAddressSpace')]",
+              "destinationPortRange": "443",
+              "sourcePortRange": "*",
+              "access": "Allow",
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowGWMgr",
+            "properties": {
+              "priority": "102",
+              "protocol": "TCP",
+              "sourceAddressPrefix": "GatewayManager",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "65200-65535",
+              "sourcePortRange": "*",
+              "access": "Allow",
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('VMPIP')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('ClientPIP')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('VnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('BackendNSG'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('AppGWNSG'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('VnetAddressSpace')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('AGWSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('AGWSubnetAddressSpace')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('AppGWNSG'))]"
+              }
+            }
+          },
+          {
+            "name": "[variables('VMSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('VMSubnetAddressSpace')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('BackendNSG'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2022-07-01",
+      "name": "[variables('VMNIC')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('VnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('VMPIP'))]",
+        "[resourceId('Microsoft.Network/applicationGateways', variables('applicationGateWayName'))]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": "True",
+        "ipConfigurations": [
+          {
+            "name": "Ipconfig1",
+            "properties": {
+              "primary": "True",
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "10.1.1.4",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('VMPIP'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VnetName'), variables('VMSubnetName'))]"
+              },
+              "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('applicationGateWayName'), 'myBackendPool')]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2021-03-01",
+      "name": "[variables('VMName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('VMNIC'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_D2s_v5"
+        },
+        "osProfile": {
+          "computerName": "[variables('VMName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2022-datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('VMNIC'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2021-04-01",
+      "name": "[concat(variables('VMName'),'/', 'InstallWebServer')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/',variables('VMName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.7",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "https://supportability.visualstudio.com/AzureNetworking/_git/AzureNetworking?path=/.LabBoxRepo/Layer7/AppGW-E2E-HTTPS_Script.ps1"
+          ],
+          "commandToExecute": "powershell.exe -ExecutionPolicy Unrestricted -File AppGW-E2E-HTTPS_Script.ps1"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('AppGWPIP')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/ApplicationGateways",
+      "apiVersion": "2021-05-01",
+      "name": "[variables('applicationGateWayName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('AppGWPIP'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('VnetName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('AppGWNSG'))]"
+      ],
+      "properties": {
+        "sku": {
+          "name": "Standard_v2",
+          "tier": "Standard_v2"
+        },
+        "sslCertificates": [
+          {
+            "name": "Cert1",
+            "properties": {
+              "data": "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",
+              "password": "Password1"
+            }
+          }
+        ],
+        "gatewayIPConfigurations": [
+          {
+            "name": "appGatewayIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VnetName'), variables('AGWSubnetName'))]"
+              }
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGwPublicFrontendIp",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('AppGWPIP'))]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "port_443",
+            "properties": {
+              "port": 443
+            }
+          }
+        ],
+        "trustedRootCertificates": [
+          {
+            "name": "FabrikamRootCA",
+            "properties": {
+              "data": "MIIDYTCCAkmgAwIBAgIQORLc0wVsG49D5EjzMbZVoDANBgkqhkiG9w0BAQsFADBDMRMwEQYKCZImiZPyLGQBGRYDY29tMRgwFgYKCZImiZPyLGQBGRYIZmFicmlrYW0xEjAQBgNVBAMTCVJvb3RjYS1DQTAeFw0yMzAyMDYwNTEwNTFaFw00MzAyMDYwNTIwNDlaMEMxEzARBgoJkiaJk/IsZAEZFgNjb20xGDAWBgoJkiaJk/IsZAEZFghmYWJyaWthbTESMBAGA1UEAxMJUm9vdGNhLUNBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArGhYq8xqS2lN0Ed3GHNEX6JqO7txX9tFDe07tc5ZnxeIAC7577TO0Y+0IpWLaRcYRnHDKOMrrfsggWcRjjVZS9V1V2xQTM+ovgeoZyBaJAuNGigo2044YSH1IowN3XPgAr7qUo6XYSIBQvOXdm6vWjL2Fjw2DQ/S63DjDyD8EE/DAM0g2ylj+rYl4IFPXeyC1sfmtMxx3A7i39ac2PKBsvAqZDPYYHLrZ9MYmAu+F1fyv20PC2NJ3ZNTaKCnnI5pRVnyPCozMG0bksjsRKyL9ypr54NvvoGTlXJvUyKn/A3O1lja7XukULmj3o20Dl+RUR2C3fpze45LYIyyhXFD5QIDAQABo1EwTzALBgNVHQ8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUOwrfZk+ZDBuElKDexLjBIY5ZG44wEAYJKwYBBAGCNxUBBAMCAQAwDQYJKoZIhvcNAQELBQADggEBAID1AllVwaX3S0MhqIpoOatoAvAtPCmQzmNZm3y2U+lG/L3797KiP2ylftPFLQTfILvDKaI9vODFcEXjd4o2jjZuc7g9nlOb5NnSSyR53puBVoLqSFwnBEcRO8bEOCwZlH5/5miq/t0mAIFGkvlbYZh8koJGmHZdsRuXDfKz9yf1NBYotsJ7KC0qKxLrwg0CWcuDClm3PpFSXU0Rq/T/MPtnLw4u9IkmjCDwBBHbkYhDKAwMIT39x6J0FHV6vDtTNhqDFE2v3zu365LDxrXsC9zEGP8vXFnapdahdsX7O/M81JP4FJkxcklJaivsItuIGbEnSyFdUIGJzxdO8/BTVa0="
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "myBackendPool",
+            "properties": {}
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "myHTTPSSetting",
+            "properties": {
+              "port": 443,
+              "protocol": "Https",
+              "cookieBasedAffinity": "Disabled",
+              "pickHostNameFromBackendAddress": false,
+              "requestTimeout": 20,
+              "hostName": "https.internal.fabrikam.com",
+              "trustedRootCertificates": [
+                {
+                  "id": "[resourceId('Microsoft.Network/applicationGateways/trustedRootCertificates', variables('applicationGateWayName'), 'FabrikamRootCA')]"
+                }
+              ]
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "myListener_443",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', variables('applicationGateWayName'), 'appGwPublicFrontendIp')]"
+              },
+              "frontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', variables('applicationGateWayName'), 'port_443')]"
+              },
+              "protocol": "Https",
+              "sslCertificate": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/sslCertificates', variables('applicationGateWayName'), 'Cert1')]"
+              },
+              "requireServerNameIndication": false
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "name": "myRoutingRule",
+            "properties": {
+              "ruleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('applicationGateWayName'), 'myListener_443')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('applicationGateWayName'), 'myBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', variables('applicationGateWayName'), 'myHTTPSSetting')]"
+              }
+            }
+          }
+        ],
+        "enableHttp2": false,
+        "autoscaleConfiguration": {
+          "minCapacity": 0,
+          "maxCapacity": 10
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2022-07-01",
+      "name": "[variables('ClientNIC')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('VnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('ClientPIP'))]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": "True",
+        "ipConfigurations": [
+          {
+            "name": "Ipconfig1",
+            "properties": {
+              "primary": "True",
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "10.1.1.5",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('ClientPIP'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VnetName'), variables('VMSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2021-03-01",
+      "name": "[variables('ClientName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('ClientNIC'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_D2s_v5"
+        },
+        "osProfile": {
+          "computerName": "[variables('ClientName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2022-datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('ClientNIC'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2021-04-01",
+      "name": "[concat(variables('ClientName'),'/', 'InstallWebServer')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/',variables('ClientName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.7",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "https://supportability.visualstudio.com/AzureNetworking/_git/AzureNetworking?path=/.LabBoxRepo/Layer7/AppGW-E2E-HTTPS_Script.ps1"
+          ],
+          "commandToExecute": "powershell.exe -ExecutionPolicy Unrestricted -File AppGW-E2E-HTTPS_Script.ps1"
+        }
+      }
+    }
+  ]
+}
