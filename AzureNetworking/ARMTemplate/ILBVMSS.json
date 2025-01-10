@@ -1,0 +1,493 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.26.170.59819",
+      "templateHash": "18056006208819331033"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "vnet1Name": {
+      "type": "string",
+      "defaultValue": "vnet-1"
+    },
+    "vnet1AddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.5.0.0/16"
+    },
+    "vnet1subnets": {
+      "type": "array",
+      "defaultValue": [
+        {
+          "name": "VM-subnet",
+          "addressPrefix": "10.5.1.0/24"
+        },
+        {
+          "name": "Client-subnet",
+          "addressPrefix": "10.5.2.0/24"
+        }
+      ]
+    },
+    "nsg1Name": {
+      "type": "string",
+      "defaultValue": "nsg1"
+    },
+    "homeIP": {
+      "type": "string"
+    },
+    "adminUsername": {
+      "type": "string"
+    },
+    "adminPassword": {
+      "type": "securestring"
+    },
+    "sshpubkeydata": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "add a public key here or with param file if desired."
+      }
+    },
+    "vmssName": {
+      "type": "string",
+      "defaultValue": "ubuntuVMSS"
+    },
+    "instanceCount": {
+      "type": "int",
+      "defaultValue": 2
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B1s"
+    },
+    "ubuntuOSVersion": {
+      "type": "string",
+      "defaultValue": "22_04-lts-gen2"
+    },
+    "clientvm1PubIPname": {
+      "type": "string",
+      "defaultValue": "client-vm1PubIP"
+    },
+    "ClientVM1NICname": {
+      "type": "string",
+      "defaultValue": "client-vm2NIC"
+    },
+    "ClientVM1Name": {
+      "type": "string",
+      "defaultValue": "client-vm1"
+    },
+    "SLB1name": {
+      "type": "string",
+      "defaultValue": "SLB1"
+    }
+  },
+  "variables": {
+    "copy": [
+      {
+        "name": "vnet1subnetproperties",
+        "count": "[length(parameters('vnet1subnets'))]",
+        "input": {
+          "name": "[parameters('vnet1subnets')[copyIndex('vnet1subnetproperties')].name]",
+          "properties": {
+            "addressPrefix": "[parameters('vnet1subnets')[copyIndex('vnet1subnetproperties')].addressPrefix]",
+            "networkSecurityGroup": {
+              "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg1Name'))]"
+            },
+            "serviceEndpoints": [],
+            "privateEndpointNetworkPolicies": "Disabled",
+            "privateLinkServiceNetworkPolicies": "Enabled"
+          }
+        }
+      }
+    ],
+    "$fxv#0": "#cloud-config\r\npackage_upgrade: true\r\npackages:\r\n  - apache2\r\n  - openssl\r\nwrite_files:\r\n  - owner: www-data:www-data\r\n    path: /var/www/html/index.html\r\n    content: |\r\n      <html>\r\n      <head>\r\n        <title>Remote VM2 Test Page</title>\r\n      </head>\r\n      <body>\r\n        <h1>Hello from Remote VM 2</h1>\r\n      </body>\r\n      </html>\r\nruncmd:\r\n  # Generate a self-signed certificate and key\r\n  - openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/apache-selfsigned.key -out /etc/ssl/certs/apache-selfsigned.crt -subj \"/CN=contoso.com\"\r\n  # Create an Apache config file for HTTPS\r\n  - echo \"<IfModule mod_ssl.c>\" > /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"<VirtualHost *:443>\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"ServerAdmin webmaster@localhost\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"ServerName contoso.com\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"DocumentRoot /var/www/html\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"ErrorLog ${APACHE_LOG_DIR}/error.log\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"CustomLog ${APACHE_LOG_DIR}/access.log combined\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"SSLEngine on\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"SSLCertificateFile /etc/ssl/certs/apache-selfsigned.crt\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"SSLCertificateKeyFile /etc/ssl/private/apache-selfsigned.key\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"</VirtualHost>\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  - echo \"</IfModule>\" >> /etc/apache2/sites-available/default-ssl.conf\r\n  # Enable HTTPS site and reload Apache\r\n  - a2enmod ssl\r\n  - a2ensite default-ssl.conf\r\n  - systemctl reload apache2.service",
+    "imageReference": {
+      "publisher": "Canonical",
+      "offer": "0001-com-ubuntu-server-jammy",
+      "sku": "[parameters('ubuntuOSVersion')]",
+      "version": "latest"
+    },
+    "linuxVMsize": "Standard_B1s",
+    "sshkeyconfig": {
+      "publicKeys": [
+        {
+          "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername'))]",
+          "keyData": "[parameters('sshpubkeydata')]"
+        }
+      ]
+    },
+    "vmsscloudInit": "[base64(variables('$fxv#0'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2022-11-01",
+      "name": "[parameters('vnet1Name')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vnet1AddressPrefix')]"
+          ]
+        },
+        "subnets": "[variables('vnet1subnetproperties')]",
+        "virtualNetworkPeerings": [],
+        "enableDdosProtection": false
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg1Name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2022-11-01",
+      "name": "[parameters('nsg1Name')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowCorpnet",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules@2022-11-01",
+            "properties": {
+              "description": "CSS Governance Security Rule.  Allow Corpnet inbound.  https://aka.ms/casg",
+              "priority": 2700,
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "CorpNetPublic",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "AllowSAW",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "description": "CSS Governance Security Rule.  Allow SAW inbound.  https://aka.ms/casg",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "CorpNetSaw",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 2701,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "Any_home",
+            "properties": {
+              "description": "Allow home IP",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[parameters('homeIP')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 150,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2022-11-01",
+      "name": "[parameters('SLB1name')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnet1Name'), parameters('vnet1subnets')[0].name)]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "backendpool1"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "httprule",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', parameters('SLB1name'), 'ipconfig1')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('SLB1name'), 'backendpool1')]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 80,
+              "backendPort": 80,
+              "idleTimeoutInMinutes": 4,
+              "enableFloatingIP": false,
+              "enableTcpReset": false,
+              "loadDistribution": "Default",
+              "disableOutboundSnat": true,
+              "probe": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', parameters('SLB1name'), 'HTTPProbe')]"
+              }
+            }
+          },
+          {
+            "name": "HTTPSRule",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', parameters('SLB1name'), 'ipconfig1')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('SLB1name'), 'backendpool1')]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 443,
+              "backendPort": 443,
+              "idleTimeoutInMinutes": 4,
+              "enableFloatingIP": false,
+              "enableTcpReset": false,
+              "loadDistribution": "Default",
+              "disableOutboundSnat": true,
+              "probe": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', parameters('SLB1name'), 'HTTPSProbe')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "HTTPProbe",
+            "properties": {
+              "protocol": "Http",
+              "port": 80,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2,
+              "requestPath": "/"
+            }
+          },
+          {
+            "name": "HTTPSProbe",
+            "properties": {
+              "protocol": "Https",
+              "port": 443,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2,
+              "requestPath": "/"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet1Name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachineScaleSets",
+      "apiVersion": "2023-03-01",
+      "name": "[parameters('vmssName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('vmSize')]",
+        "tier": "Standard",
+        "capacity": "[parameters('instanceCount')]"
+      },
+      "properties": {
+        "overprovision": false,
+        "upgradePolicy": {
+          "mode": "Manual"
+        },
+        "virtualMachineProfile": {
+          "storageProfile": {
+            "imageReference": "[variables('imageReference')]",
+            "osDisk": {
+              "caching": "ReadWrite",
+              "createOption": "FromImage",
+              "managedDisk": {
+                "storageAccountType": "Standard_LRS"
+              }
+            }
+          },
+          "osProfile": {
+            "computerNamePrefix": "[parameters('vmssName')]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]",
+            "customData": "[variables('vmsscloudInit')]",
+            "linuxConfiguration": {
+              "disablePasswordAuthentication": false,
+              "provisionVMAgent": true
+            }
+          },
+          "networkProfile": {
+            "networkInterfaceConfigurations": [
+              {
+                "name": "nicconfig1",
+                "properties": {
+                  "primary": true,
+                  "ipConfigurations": [
+                    {
+                      "name": "ipconfig1",
+                      "properties": {
+                        "subnet": {
+                          "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnet1Name')), '2022-11-01').subnets[0].id]"
+                        },
+                        "loadBalancerBackendAddressPools": [
+                          {
+                            "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('SLB1name'), 'backendpool1')]"
+                          }
+                        ],
+                        "publicIPAddressConfiguration": {
+                          "name": "vmssPip",
+                          "properties": {
+                            "idleTimeoutInMinutes": 4
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/loadBalancers', parameters('SLB1name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet1Name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2022-11-01",
+      "name": "[parameters('clientvm1PubIPname')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "publicIPAddressVersion": "IPv4",
+        "idleTimeoutInMinutes": 4
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2022-11-01",
+      "name": "[parameters('ClientVM1NICname')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "privateIPAddressVersion": "IPv4",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('clientvm1PubIPname'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnet1Name'), parameters('vnet1subnets')[1].name)]"
+              },
+              "primary": true
+            }
+          }
+        ],
+        "enableAcceleratedNetworking": false,
+        "enableIPForwarding": false,
+        "nicType": "Standard"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('clientvm1PubIPname'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet1Name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2022-11-01",
+      "name": "[parameters('ClientVM1Name')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('linuxVMsize')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "caching": "ReadWrite",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            },
+            "deleteOption": "Delete"
+          }
+        },
+        "osProfile": {
+          "computerName": "[parameters('ClientVM1Name')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false,
+            "ssh": "[if(not(equals(parameters('sshpubkeydata'), '')), variables('sshkeyconfig'), createObject())]",
+            "provisionVMAgent": true,
+            "patchSettings": {
+              "patchMode": "ImageDefault",
+              "assessmentMode": "ImageDefault"
+            }
+          },
+          "customData": "[variables('vmsscloudInit')]",
+          "allowExtensionOperations": true
+        },
+        "securityProfile": {
+          "uefiSettings": {
+            "secureBootEnabled": true,
+            "vTpmEnabled": true
+          },
+          "securityType": "TrustedLaunch"
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('ClientVM1NICname'))]",
+              "properties": {
+                "primary": true
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('ClientVM1NICname'))]"
+      ]
+    }
+  ]
+}
