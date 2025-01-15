@@ -1,0 +1,90 @@
+<properties
+  articleid="5444e1c5-0506-49ff-bc51-6f3e7eabfd3c"
+  cloudenvironments="public,fairfax,mooncake,ussec,usnat"
+  createdfrom=""
+  description="Self help article for On Your Data"
+  disableclouds=""
+  isofficial="True"
+  ms.author="v-pkatikitha,camoisan"
+  ownershipid="AzureCogSvc_CognitiveServices"
+  pagetitle="On Your Data"
+  problemids=""
+  productfamilyid="2168ca99-7a07-f7cf-8fe3-011ac2e8e704"
+  productpesids="16121,17714"
+  resource=""
+  resourcerequired="True"
+  resourcetags=""
+  selfhelptype="Apollo"
+  service=""
+  supporttopicids="8b25f7c8-6a3b-94e2-9f22-757cdfd47393" />
+# Azure Open AI On Your Data Issues
+
+## Troubleshoot Azure OpenAI On Your Data feature
+
+### Learn about the On Your Data feature
+
+The On Your Data feature in Azure Open AI enables running supported chat models, such as GPT-35-Turbo and GPT-4, on your data *without needing to train or fine-tune models*. Azure Open AI on your data, together with Azure Cognitive Search, determines what data to retrieve from the designated data source, based on the user input and provided conversation history. You can create an index of your data by using either a local file, web files, an existing AI Search Index, or blob storage.
+ 
+For more details on how On Your Data with text, see [Using Your Data - Text](https://learn.microsoft.com/azure/ai-services/openai/concepts/use-your-data?tabs=ai-search).
+For more details on how On Your Data with images, see [Using Your Data - image(preview)](https://learn.microsoft.com/azure/ai-services/openai/concepts/use-your-image-data).
+
+### Troubleshooting Data Source Issues with On Your Data
+If you are encountering issues adding data sources, or fetching data from a source ensure you have followed the latest documentation to configure the connection.
+
+https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/use-your-data?tabs=ai-search#supported-data-sources
+
+### Roles for On Your Data
+To understand the available roles for On  Your Data review [our documentation](https://learn.microsoft.com/azure/ai-services/openai/how-to/use-your-data-securely#role-assignments)
+
+### Support for virtual networks and private links
+
+VNETs and Private Endpoints / Private Links are now supported by On Your Data feature. The process can be complex and involves setting up a VNET, Managed identity, and a VPN. If all steps are not followed, the solution will not function as expected. 
+
+For guidance see our documentation on [Securely Using Azure Open AI On Your Data](https://learn.microsoft.com/azure/ai-services/openai/how-to/use-your-data-securely)
+
+### Supported chat models
+
+* gpt-4 (0314)
+* gpt-4 (0613)
+* gpt-4-32k (0314)
+* gpt-4-32k (0613)
+* gpt-4 (1106-preview)
+* gpt-35-turbo-16k (0613)
+* gpt-35-turbo (1106)
+
+### Use On Your Data in the Azure Open AI Studio
+
+If you're testing the On Your Data feature from the Azure Open AI Studio, the following additional steps are required for it to function correctly:
+1. Make sure that you have at least **Cognitive Services Contributor** access on both the Azure Open AI and Azure AI Search resources.
+2. If you're using Azure Blob Storage as a data source,
+   1. Make sure that CORS is enabled on the Azure Blob Storage resource.
+   2. Make sure that the user has **Cognitive Services Contributor** access for the Azure Blob Storage resource.
+
+For step-by-step instructions on how to use On Your Data, see [Quickstart: Chat with Azure OpenAI models using your own data](https://learn.microsoft.com/azure/ai-services/openai/use-your-data-quickstart?tabs=command-line%2Cpython&pivots=programming-language-studio).
+
+### Supported file types
+
+We support a variety of file types, but the best citations are provided from Markdown (.md) files. The following is a complete list of supported file types:
+
+* .txt
+* .md
+* .html
+* .docx
+* .pptx
+* .pdf
+
+for more information, see [supported file types](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/use-your-data?tabs=ai-search#data-formats-and-file-types).
+
+### Resources
+- [Supported Data Sources](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/use-your-data?tabs=ai-search#supported-data-sources).
+- [Using Your Data - Text](https://learn.microsoft.com/azure/ai-services/openai/concepts/use-your-data?tabs=ai-search).
+- [Using Your Data - image(preview)](https://learn.microsoft.com/azure/ai-services/openai/concepts/use-your-image-data).
+- [On Your Data Roles](https://learn.microsoft.com/azure/ai-services/openai/how-to/use-your-data-securely#role-assignments)
+- [Securely Using Azure Open AI On Your Data](https://learn.microsoft.com/azure/ai-services/openai/how-to/use-your-data-securely)
+- [Quickstart: Chat with Azure OpenAI models using your own data](https://learn.microsoft.com/azure/ai-services/openai/use-your-data-quickstart?tabs=command-line%2Cpython&pivots=programming-language-studio).
+- [supported file types](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/use-your-data?tabs=ai-search#data-formats-and-file-types).
+
+### Relevant results from the web
+<azureKB>
+       <client>portal</client>
+</azureKB>
