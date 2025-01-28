@@ -1,0 +1,336 @@
+{
+    "name": "CreateHierarchy",
+    "properties": {
+        "activities": [
+            {
+                "name": "Lookup1",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "storeSettings": {
+                            "type": "AzureBlobFSReadSettings",
+                            "recursive": true,
+                            "enablePartitionDiscovery": false
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextReadSettings"
+                        }
+                    },
+                    "dataset": {
+                        "referenceName": "DelimitedText12",
+                        "type": "DatasetReference"
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "Until1",
+                "type": "Until",
+                "dependsOn": [
+                    {
+                        "activity": "Lookup1",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Set variable1",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Set variable7",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "expression": {
+                        "value": "@equals(activity('Filter1').output.value[0].EmpId,activity('Filter1').output.value[0].ReportingToId)",
+                        "type": "Expression"
+                    },
+                    "activities": [
+                        {
+                            "name": "Filter1",
+                            "type": "Filter",
+                            "dependsOn": [],
+                            "userProperties": [],
+                            "typeProperties": {
+                                "items": {
+                                    "value": "@activity('Lookup1').output.value",
+                                    "type": "Expression"
+                                },
+                                "condition": {
+                                    "value": "@equals(item().EmpId, variables('var1'))",
+                                    "type": "Expression"
+                                }
+                            }
+                        },
+                        {
+                            "name": "Set variable5",
+                            "type": "SetVariable",
+                            "dependsOn": [
+                                {
+                                    "activity": "Filter1",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "variableName": "var2",
+                                "value": {
+                                    "value": "@concat(activity('Filter1').output.value[0].Employee,if(empty(variables('var3')),'',concat('|',variables('var3'))))",
+                                    "type": "Expression"
+                                }
+                            }
+                        },
+                        {
+                            "name": "Set variable6",
+                            "type": "SetVariable",
+                            "dependsOn": [
+                                {
+                                    "activity": "Set variable5",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "variableName": "var3",
+                                "value": {
+                                    "value": "@variables('var2')",
+                                    "type": "Expression"
+                                }
+                            }
+                        },
+                        {
+                            "name": "UpdatingNextReportingId",
+                            "type": "SetVariable",
+                            "dependsOn": [
+                                {
+                                    "activity": "Set variable6",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "variableName": "var1",
+                                "value": {
+                                    "value": "@activity('Filter1').output.value[0].ReportingToId",
+                                    "type": "Expression"
+                                }
+                            }
+                        }
+                    ],
+                    "timeout": "0.12:00:00"
+                }
+            },
+            {
+                "name": "Set variable1",
+                "type": "SetVariable",
+                "dependsOn": [],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "var1",
+                    "value": {
+                        "value": "@pipeline().parameters.ReportingToId",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "Set variable3",
+                "type": "SetVariable",
+                "dependsOn": [
+                    {
+                        "activity": "Until1",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "copyoutput",
+                    "value": {
+                        "value": "@variables('var3')",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "Set variable7",
+                "type": "SetVariable",
+                "dependsOn": [],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "var3",
+                    "value": {
+                        "value": "@if(equals(pipeline().parameters.EmpId,pipeline().parameters.ReportingToId),'',pipeline().parameters.Employee)",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "Copy data1",
+                "type": "Copy",
+                "dependsOn": [
+                    {
+                        "activity": "Set variable3",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "additionalColumns": [
+                            {
+                                "name": "Path",
+                                "value": {
+                                    "value": "@variables('var3')",
+                                    "type": "Expression"
+                                }
+                            }
+                        ],
+                        "storeSettings": {
+                            "type": "AzureBlobFSReadSettings",
+                            "recursive": true,
+                            "enablePartitionDiscovery": false
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextReadSettings"
+                        }
+                    },
+                    "sink": {
+                        "type": "DelimitedTextSink",
+                        "storeSettings": {
+                            "type": "AzureBlobFSWriteSettings"
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextWriteSettings",
+                            "quoteAllText": true,
+                            "fileExtension": ".txt"
+                        }
+                    },
+                    "enableStaging": false,
+                    "translator": {
+                        "type": "TabularTranslator",
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                            "allowDataTruncation": true,
+                            "treatBooleanAsNumber": false
+                        }
+                    }
+                },
+                "inputs": [
+                    {
+                        "referenceName": "DelimitedText9",
+                        "type": "DatasetReference"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "DelimitedText14",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "empname": {
+                                "value": "@pipeline().parameters.Employee",
+                                "type": "Expression"
+                            }
+                        }
+                    }
+                ]
+            }
+        ],
+        "parameters": {
+            "EmpId": {
+                "type": "string",
+                "defaultValue": "3"
+            },
+            "ReportingToId": {
+                "type": "string",
+                "defaultValue": "2"
+            },
+            "Employee": {
+                "type": "string",
+                "defaultValue": "AVP"
+            },
+            "ReportingTo": {
+                "type": "string",
+                "defaultValue": "VP"
+            }
+        },
+        "variables": {
+            "var1": {
+                "type": "String"
+            },
+            "outputPath": {
+                "type": "Array"
+            },
+            "copyoutput": {
+                "type": "String"
+            },
+            "var2": {
+                "type": "String"
+            },
+            "var3": {
+                "type": "String"
+            }
+        },
+        "annotations": [],
+        "lastPublishTime": "2025-01-27T18:04:20Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
