@@ -1,0 +1,315 @@
+{
+    "name": "PL_LogErrorToCSV",
+    "properties": {
+        "activities": [
+            {
+                "name": "JsonToSQL",
+                "type": "ExecuteDataFlow",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "1.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "dataflow": {
+                        "referenceName": "JsonToSQL",
+                        "type": "DataFlowReference"
+                    },
+                    "compute": {
+                        "coreCount": 8,
+                        "computeType": "General"
+                    },
+                    "traceLevel": "Fine"
+                }
+            },
+            {
+                "name": "Set variable1",
+                "type": "SetVariable",
+                "dependsOn": [
+                    {
+                        "activity": "JsonToSQL",
+                        "dependencyConditions": [
+                            "Failed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "errormessage",
+                    "value": {
+                        "value": "@activity('JSONToSQL').Error.message",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "Copy data1",
+                "type": "Copy",
+                "dependsOn": [
+                    {
+                        "activity": "Set variable1",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "additionalColumns": [
+                            {
+                                "name": "errormsg",
+                                "value": {
+                                    "value": "@variables('errormessage')",
+                                    "type": "Expression"
+                                }
+                            }
+                        ],
+                        "storeSettings": {
+                            "type": "AzureBlobFSReadSettings",
+                            "recursive": true,
+                            "enablePartitionDiscovery": false
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextReadSettings"
+                        }
+                    },
+                    "sink": {
+                        "type": "DelimitedTextSink",
+                        "storeSettings": {
+                            "type": "AzureBlobFSWriteSettings"
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextWriteSettings",
+                            "quoteAllText": true,
+                            "fileExtension": ".txt"
+                        }
+                    },
+                    "enableStaging": false,
+                    "translator": {
+                        "type": "TabularTranslator",
+                        "mappings": [
+                            {
+                                "source": {
+                                    "name": "errormsg",
+                                    "type": "String"
+                                },
+                                "sink": {
+                                    "type": "String",
+                                    "physicalType": "String",
+                                    "ordinal": 1
+                                }
+                            }
+                        ],
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                            "allowDataTruncation": true,
+                            "treatBooleanAsNumber": false
+                        }
+                    }
+                },
+                "inputs": [
+                    {
+                        "referenceName": "DelimitedText1",
+                        "type": "DatasetReference"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "DS_logerror",
+                        "type": "DatasetReference"
+                    }
+                ]
+            },
+            {
+                "name": "Set variable2",
+                "type": "SetVariable",
+                "dependsOn": [
+                    {
+                        "activity": "JsonToSQL",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "RowsRead",
+                    "value": {
+                        "value": "@{activity('JsonToSQL').output.runStatus.metrics.sink1.sources.source1.rowsRead}",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "Set variable3",
+                "type": "SetVariable",
+                "dependsOn": [
+                    {
+                        "activity": "JsonToSQL",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "RowsWriiten",
+                    "value": {
+                        "value": "@{activity('JsonToSQL').output.runStatus.metrics.sink1.rowsWritten}\n",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "Copy data2",
+                "type": "Copy",
+                "dependsOn": [
+                    {
+                        "activity": "Set variable2",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Set variable3",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "additionalColumns": [
+                            {
+                                "name": "rowsread",
+                                "value": {
+                                    "value": "@trim(variables('RowsRead'))",
+                                    "type": "Expression"
+                                }
+                            },
+                            {
+                                "name": "rowswritten",
+                                "value": {
+                                    "value": "@trim(variables('RowsWriiten'))",
+                                    "type": "Expression"
+                                }
+                            }
+                        ],
+                        "storeSettings": {
+                            "type": "AzureBlobFSReadSettings",
+                            "recursive": true,
+                            "enablePartitionDiscovery": false
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextReadSettings"
+                        }
+                    },
+                    "sink": {
+                        "type": "DelimitedTextSink",
+                        "storeSettings": {
+                            "type": "AzureBlobFSWriteSettings"
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextWriteSettings",
+                            "quoteAllText": true,
+                            "fileExtension": ".txt"
+                        }
+                    },
+                    "enableStaging": false,
+                    "translator": {
+                        "type": "TabularTranslator",
+                        "mappings": [
+                            {
+                                "source": {
+                                    "name": "rowsread",
+                                    "type": "String"
+                                },
+                                "sink": {
+                                    "name": "rowsread",
+                                    "type": "String",
+                                    "physicalType": "String"
+                                }
+                            },
+                            {
+                                "source": {
+                                    "name": "rowswritten",
+                                    "type": "String"
+                                },
+                                "sink": {
+                                    "name": "rowswritten",
+                                    "type": "String",
+                                    "physicalType": "String"
+                                }
+                            }
+                        ],
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                            "allowDataTruncation": true,
+                            "treatBooleanAsNumber": false
+                        }
+                    }
+                },
+                "inputs": [
+                    {
+                        "referenceName": "DelimitedText1",
+                        "type": "DatasetReference"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "DS_Successlogs",
+                        "type": "DatasetReference"
+                    }
+                ]
+            }
+        ],
+        "variables": {
+            "errormessage": {
+                "type": "String"
+            },
+            "RowsWriiten": {
+                "type": "String"
+            },
+            "RowsRead": {
+                "type": "String"
+            }
+        },
+        "annotations": [],
+        "lastPublishTime": "2025-01-27T18:04:21Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
