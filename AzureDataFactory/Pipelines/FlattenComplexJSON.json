@@ -1,0 +1,150 @@
+{
+    "name": "dataflow11",
+    "properties": {
+        "type": "MappingDataFlow",
+        "typeProperties": {
+            "sources": [
+                {
+                    "dataset": {
+                        "referenceName": "Json7",
+                        "type": "DatasetReference"
+                    },
+                    "name": "source1"
+                }
+            ],
+            "sinks": [
+                {
+                    "dataset": {
+                        "referenceName": "DelimitedText20",
+                        "type": "DatasetReference"
+                    },
+                    "name": "sink1"
+                }
+            ],
+            "transformations": [
+                {
+                    "name": "flatten1"
+                },
+                {
+                    "name": "flatten2"
+                },
+                {
+                    "name": "flatten3"
+                },
+                {
+                    "name": "surrogateKey1"
+                },
+                {
+                    "name": "surrogateKey2"
+                },
+                {
+                    "name": "derivedColumn1"
+                },
+                {
+                    "name": "join1"
+                },
+                {
+                    "name": "select1"
+                },
+                {
+                    "name": "sort1"
+                },
+                {
+                    "name": "surrogateKey3"
+                },
+                {
+                    "name": "derivedColumn2"
+                },
+                {
+                    "name": "sort2"
+                },
+                {
+                    "name": "pivot1"
+                },
+                {
+                    "name": "MapDrifted1",
+                    "description": "Creates an explicit mapping for each drifted column"
+                },
+                {
+                    "name": "select2"
+                }
+            ],
+            "scriptLines": [
+                "source(output(",
+                "          heading as string[],",
+                "          rows as string[][]",
+                "     ),",
+                "     allowSchemaDrift: true,",
+                "     validateSchema: false,",
+                "     ignoreNoFilesFound: false,",
+                "     documentForm: 'arrayOfDocuments') ~> source1",
+                "source1 foldDown(unroll(heading),",
+                "     mapColumn(",
+                "          heading",
+                "     ),",
+                "     skipDuplicateMapInputs: false,",
+                "     skipDuplicateMapOutputs: false) ~> flatten1",
+                "source1 foldDown(unroll(rows, rows),",
+                "     mapColumn(",
+                "          rows",
+                "     ),",
+                "     skipDuplicateMapInputs: false,",
+                "     skipDuplicateMapOutputs: false) ~> flatten2",
+                "flatten2 foldDown(unroll(rows),",
+                "     mapColumn(",
+                "          rows",
+                "     ),",
+                "     skipDuplicateMapInputs: false,",
+                "     skipDuplicateMapOutputs: false) ~> flatten3",
+                "flatten1 keyGenerate(output(id1 as long),",
+                "     startAt: 1L,",
+                "     stepValue: 1L) ~> surrogateKey1",
+                "flatten3 keyGenerate(output(id2 as long),",
+                "     startAt: 1L,",
+                "     stepValue: 1L) ~> surrogateKey2",
+                "surrogateKey2 derive(ranking = iif(id2%3==0,3,toInteger(id2%3))) ~> derivedColumn1",
+                "derivedColumn1, surrogateKey1 join(ranking == id1,",
+                "     joinType:'inner',",
+                "     matchType:'exact',",
+                "     ignoreSpaces: false,",
+                "     broadcast: 'auto')~> join1",
+                "join1 select(mapColumn(",
+                "          heading,",
+                "          rows",
+                "     ),",
+                "     skipDuplicateMapInputs: true,",
+                "     skipDuplicateMapOutputs: true) ~> select1",
+                "select1 sort(asc(heading, true)) ~> sort1",
+                "sort1 keyGenerate(output(rownum as long),",
+                "     startAt: 1L,",
+                "     stepValue: 1L) ~> surrogateKey3",
+                "surrogateKey3 derive(ranking = iif(rownum%3==0,3,toInteger(rownum%3))) ~> derivedColumn2",
+                "derivedColumn2 sort(asc(ranking, true)) ~> sort2",
+                "sort2 pivot(groupBy(ranking),",
+                "     pivotBy(heading),",
+                "     {} = max(rows),",
+                "     columnNaming: '$N$V',",
+                "     lateral: true) ~> pivot1",
+                "pivot1 derive(id = toString(byName('id')),",
+                "          name = toString(byName('name')),",
+                "          standard = toString(byName('standard'))) ~> MapDrifted1",
+                "MapDrifted1 select(mapColumn(",
+                "          id,",
+                "          standard,",
+                "          name",
+                "     ),",
+                "     skipDuplicateMapInputs: true,",
+                "     skipDuplicateMapOutputs: true) ~> select2",
+                "select2 sink(allowSchemaDrift: true,",
+                "     validateSchema: false,",
+                "     partitionFileNames:['outputfile.csv'],",
+                "     umask: 0022,",
+                "     preCommands: [],",
+                "     postCommands: [],",
+                "     skipDuplicateMapInputs: true,",
+                "     skipDuplicateMapOutputs: true,",
+                "     partitionBy('hash', 1)) ~> sink1"
+            ]
+        }
+    }
+}
