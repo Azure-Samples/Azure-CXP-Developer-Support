@@ -1,0 +1,153 @@
+{
+    "name": "DivideArrayIntoSegments",
+    "properties": {
+        "activities": [
+            {
+                "name": "Make ForEach Items",
+                "type": "SetVariable",
+                "dependsOn": [
+                    {
+                        "activity": "Make remainder",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "eachitems",
+                    "value": {
+                        "value": "@range(0,\nadd( \nif(greater(int(variables('remainder')),0) ,1 ,0 ),\n div(length(variables('raw')),\n int(pipeline().parameters.segmentsize)))\n )",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "break up list",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "Make ForEach Items",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@variables('eachitems')",
+                        "type": "Expression"
+                    },
+                    "activities": [
+                        {
+                            "name": "If last segment",
+                            "description": "Use remainder or segment size",
+                            "type": "IfCondition",
+                            "dependsOn": [],
+                            "userProperties": [],
+                            "typeProperties": {
+                                "expression": {
+                                    "value": "@less(item(),\r\ndiv(length(variables('raw')),pipeline().parameters.segmentsize)\r\n)",
+                                    "type": "Expression"
+                                },
+                                "ifFalseActivities": [
+                                    {
+                                        "name": "remain",
+                                        "type": "SetVariable",
+                                        "dependsOn": [],
+                                        "policy": {
+                                            "secureOutput": false,
+                                            "secureInput": false
+                                        },
+                                        "userProperties": [],
+                                        "typeProperties": {
+                                            "variableName": "xcerpt",
+                                            "value": {
+                                                "value": "@take(\nskip(variables('raw'),mul(item(),pipeline().parameters.segmentsize))\n, int(variables('remainder')) )",
+                                                "type": "Expression"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "ifTrueActivities": [
+                                    {
+                                        "name": "isless",
+                                        "type": "SetVariable",
+                                        "dependsOn": [],
+                                        "policy": {
+                                            "secureOutput": false,
+                                            "secureInput": false
+                                        },
+                                        "userProperties": [],
+                                        "typeProperties": {
+                                            "variableName": "xcerpt",
+                                            "value": {
+                                                "value": "@take(\nskip(variables('raw'),mul(item(),pipeline().parameters.segmentsize))\n, pipeline().parameters.segmentsize)",
+                                                "type": "Expression"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Make remainder",
+                "type": "SetVariable",
+                "dependsOn": [],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "remainder",
+                    "value": {
+                        "value": "@{mod(length(variables('raw')),pipeline().parameters.segmentsize)}",
+                        "type": "Expression"
+                    }
+                }
+            }
+        ],
+        "parameters": {
+            "segmentsize": {
+                "type": "int",
+                "defaultValue": 2
+            }
+        },
+        "variables": {
+            "raw": {
+                "type": "Array",
+                "defaultValue": [
+                    "one",
+                    "two",
+                    "three",
+                    "four",
+                    "five",
+                    "six",
+                    "seven",
+                    "eight"
+                ]
+            },
+            "xcerpt": {
+                "type": "Array"
+            },
+            "eachitems": {
+                "type": "Array"
+            },
+            "remainder": {
+                "type": "String"
+            }
+        },
+        "annotations": [],
+        "lastPublishTime": "2025-01-27T18:04:16Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
