@@ -1,0 +1,128 @@
+{
+    "name": "dataflow12",
+    "properties": {
+        "type": "MappingDataFlow",
+        "typeProperties": {
+            "sources": [
+                {
+                    "dataset": {
+                        "referenceName": "DelimitedText21",
+                        "type": "DatasetReference"
+                    },
+                    "name": "source1"
+                }
+            ],
+            "sinks": [
+                {
+                    "dataset": {
+                        "referenceName": "DelimitedText9",
+                        "type": "DatasetReference"
+                    },
+                    "name": "sink1"
+                }
+            ],
+            "transformations": [
+                {
+                    "name": "filter1"
+                },
+                {
+                    "name": "split1"
+                },
+                {
+                    "name": "surrogateKey1"
+                },
+                {
+                    "name": "pivot1"
+                },
+                {
+                    "name": "pivot2"
+                },
+                {
+                    "name": "union1"
+                },
+                {
+                    "name": "surrogateKey2"
+                },
+                {
+                    "name": "join1"
+                },
+                {
+                    "name": "surrogateKey3"
+                },
+                {
+                    "name": "MapDrifted1",
+                    "description": "Creates an explicit mapping for each drifted column"
+                },
+                {
+                    "name": "select1"
+                }
+            ],
+            "scriptLines": [
+                "source(output(",
+                "          {Project Code} as string,",
+                "          Expenditure as string",
+                "     ),",
+                "     allowSchemaDrift: true,",
+                "     validateSchema: false,",
+                "     ignoreNoFilesFound: false) ~> source1",
+                "source1 filter(startsWith({Project Code}, 'Project')) ~> filter1",
+                "surrogateKey1 split(Id<=3,",
+                "     disjoint: false) ~> split1@(ProjectA, ProjectB)",
+                "source1 keyGenerate(output(Id as long),",
+                "     startAt: 1L,",
+                "     stepValue: 1L) ~> surrogateKey1",
+                "split1@ProjectA pivot(pivotBy({Project Code}),",
+                "     {} = max(Expenditure),",
+                "     columnNaming: '$N$V',",
+                "     lateral: true) ~> pivot1",
+                "split1@ProjectB pivot(pivotBy({Project Code}),",
+                "     {} = max(Expenditure),",
+                "     columnNaming: '$N$V',",
+                "     lateral: true) ~> pivot2",
+                "pivot1, pivot2 union(byName: true)~> union1",
+                "union1 keyGenerate(output(rownum1 as long),",
+                "     startAt: 1L,",
+                "     stepValue: 1L) ~> surrogateKey2",
+                "surrogateKey2, surrogateKey3 join(rownum1 == rownum2,",
+                "     joinType:'inner',",
+                "     matchType:'exact',",
+                "     ignoreSpaces: false,",
+                "     broadcast: 'auto')~> join1",
+                "filter1 keyGenerate(output(rownum2 as long),",
+                "     startAt: 1L,",
+                "     stepValue: 1L) ~> surrogateKey3",
+                "join1 derive({ OL, Own Labour} = toString(byName(' OL, Own Labour')),",
+                "          {LAB, Labour} = toString(byName('LAB, Labour')),",
+                "          {Project A} = toString(byName('Project A')),",
+                "          { OL, CMW} = toString(byName(' OL, CMW')),",
+                "          {2C,Roof} = toString(byName('2C,Roof')),",
+                "          {2CS, roof/subcontractor} = toString(byName('2CS, roof/subcontractor')),",
+                "          {2D, Stairs} = toString(byName('2D, Stairs')),",
+                "          {2E, External Walls} = toString(byName('2E, External Walls')),",
+                "          {Project B} = toString(byName('Project B'))) ~> MapDrifted1",
+                "MapDrifted1 select(mapColumn(",
+                "          {Project Code},",
+                "          {LAB, Labour},",
+                "          { OL, Own Labour},",
+                "          { OL, CMW},",
+                "          {2C,Roof},",
+                "          {2CS, roof/subcontractor},",
+                "          {2D, Stairs},",
+                "          {2E, External Walls}",
+                "     ),",
+                "     skipDuplicateMapInputs: true,",
+                "     skipDuplicateMapOutputs: true) ~> select1",
+                "select1 sink(allowSchemaDrift: true,",
+                "     validateSchema: false,",
+                "     input(",
+                "          URL as string",
+                "     ),",
+                "     umask: 0022,",
+                "     preCommands: [],",
+                "     postCommands: [],",
+                "     skipDuplicateMapInputs: true,",
+                "     skipDuplicateMapOutputs: true) ~> sink1"
+            ]
+        }
+    }
+}
